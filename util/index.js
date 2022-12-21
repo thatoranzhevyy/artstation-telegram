@@ -33,10 +33,10 @@ const util = {
       let delay;
       if (_delay) {
         delay = _delay
-        logger.logError(`откладываю пост на: ${timeConversion(delay)}`);
+        logger.logError(`🟡 откладываю пост на: ${timeConversion(delay)}`);
       } else {
         delay = Math.floor(Math.random() * (maxDelay - minDelay + 1)) + minDelay;
-        logger.logError(`следющий пост через: ${timeConversion(delay)}`)
+        logger.logError(`🟡 следющий пост через: ${timeConversion(delay)}`)
       }
 
       timeout = setTimeout(timeoutFunction, delay);

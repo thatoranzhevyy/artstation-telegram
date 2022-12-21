@@ -59,7 +59,7 @@ const artwork = {
     return statusUpdate;
   },
   async deleteArtworkFromDB(hash) {
-    logger.logError("при запросе проекта по хэшу " + hash + " произошла ошибка. элемент удален");
+    logger.logError("🔴 при запросе проекта по хэшу " + hash + " произошла ошибка. элемент удален");
     try {
       await deleteDoc(doc(db, "artwork", hash));
     } catch (error) {
@@ -80,7 +80,7 @@ const artwork = {
         .then(res => res.data)
         .then(data => artwork = data)
     } catch (e) {
-      logger.logError("при запросе проекта по хэшу " + hash + " произошла ошибка. элемент удален");
+      logger.logError("🔴 при запросе проекта по хэшу " + hash + " произошла ошибка. элемент удален");
     }
     return artwork;
   },
@@ -90,7 +90,7 @@ const artwork = {
     telegram.sendPost(postMessageD).then(() => {
       this.updateArtworkFromDB(artworkFromDB.id, artworkFromDB).then((status) => {
         if (status) {
-          logger.logError("пост " + artworkFromDB.id + " успешно отправлен.")
+          logger.logError("🟢 пост " + artworkFromDB.id + " успешно отправлен.")
         }
       })
     })
