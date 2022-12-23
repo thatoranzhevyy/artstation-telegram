@@ -6,6 +6,7 @@ const {
   getFirestore,
   collection,
   getDocs,
+  getDoc,
   deleteDoc,
   updateDoc,
   query,
@@ -42,6 +43,13 @@ const artwork = {
     } catch (error) {
       logger.logError('Error Getting Artwork in getArtworkFromDB: ' + error, "error");
     }
+    return artwork;
+  },
+  async getArtworkFromDBByHash(hash) {
+    let artwork = false;
+    const snap = await getDoc(doc(db, 'artwork', hash))
+    if (snap.exists())
+      artwork = snap.data();
     return artwork;
   },
   async updateArtworkFromDB(hash, data) {
@@ -84,51 +92,79 @@ const artwork = {
     }
     return artwork;
   },
-
-  postArtworkToTelegramGroup(artworkFromDB, artworkByHash) {
-    let postMessageD = this.createPostData(artworkByHash);
-    telegram.sendPost(postMessageD).then(() => {
-      this.updateArtworkFromDB(artworkFromDB.id, artworkFromDB).then((status) => {
-        if (status) {
-          logger.logError("🟢 пост " + artworkFromDB.id + " успешно отправлен.")
-        }
-      })
-    })
+  async getArtworkList() {
+    let artworkList = false;
+    const url = `https://www.artstation.com/api/v2/community/explore/projects/community.json?page=1&dimension=2d&per_page=9`
+    try {
+      await axios.get(url)
+        .then(res => res.data)
+        .then(data => artworkList = data.data)
+    } catch (e) {
+      logger.logError("🔴 при запросе проектов произошла ошибка");
+    }
+    return artworkList;
   },
-  createPostData(artworkByHash) {
-    let postData = []
-    for (const assetsKey in artworkByHash.assets) {
-      if (artworkByHash.assets[assetsKey].asset_type !== "cover" && artworkByHash.assets[assetsKey].asset_type !== "video") {
-        if (assetsKey <= 9) {
-          postData.push({type: "photo", media: artworkByHash.assets[assetsKey].image_url})
-        }
+
+  postArtworkToTelegramUser(artworkByHash) {
+    let assetsMedia = this.createPost(artworkByHash);
+    for (const media of assetsMedia) {
+      telegram.sendPrivatePost(media).then(() => {
+      })
+    }
+  },
+
+
+  createPost(artwork) {
+    let assetsMedia = this.createPostMedia(artwork.assets);
+
+
+    let textTitle = `<strong>«${artwork.title.trim()}»</strong> by ${artwork.user.full_name.trim()}`;
+    let textLink = `<a href="${artwork.permalink}">resource</a>`;
+    let textHashtags = "";
+    if (artwork.categories) {
+      artwork.categories.map((element) => {
+        textHashtags += "#" + element.name.replaceAll(" ", "").replaceAll("&", "")
+          .replaceAll(",", " #").replaceAll("-", "") + " "
+      })
+    }
+    let textHash = `#${artwork.user.username.replaceAll("-", "")} ${textHashtags}`;
+
+
+    let assetsMediaArray = [];
+    if (assetsMedia.length >= 9) {
+      for (var i = 0; i < assetsMedia.length; i += 9) {
+        let slicedAssets = assetsMedia.slice(i, i + 9);
+        slicedAssets[0].caption = `${textTitle} \n\n${textLink} \n\n${textHash}`
+        slicedAssets[0].parse_mode = "HTML"
+        assetsMediaArray.push(slicedAssets)
+      }
+    } else {
+      assetsMedia[0].caption = `${textTitle} \n\n${textLink} \n\n${textHash}`
+      assetsMedia[0].parse_mode = "HTML"
+      assetsMediaArray.push(assetsMedia)
+    }
+    return assetsMediaArray;
+  },
+  createPostMedia(assets) {
+    let assetsMedia = [];
+    for (const asset of assets) {
+      if (!['cover', 'video'].includes(asset.asset_type)) {
+        assetsMedia.push({type: "photo", media: asset.image_url});
       }
     }
-    postData = this.createPostCaption(artworkByHash, postData)
-    return postData
+    return assetsMedia;
   },
-  createPostCaption(artworkByHash, postData) {
 
-    var msgcategories = ""
-    if (artworkByHash.categories) {
-      artworkByHash.categories.map((element) => {
-        msgcategories += "#" + element.name
-          .replaceAll(" ", "")
-          .replaceAll("&", "")
-          .replaceAll(",", " #")
-          .replaceAll("-", "") + " "
+
+  postArtworkToTelegramGroup(artworkByHash, artworkFromDB) {
+    let assetsMedia = this.createPost(artworkByHash);
+    for (const media of assetsMedia) {
+      telegram.sendPost(media).then(() => {
+        this.updateArtworkFromDB(artworkFromDB.id, artworkFromDB).then((status) => {
+          if (status) logger.logError("🟢 пост " + artworkFromDB.id + " успешно отправлен.")
+        })
       })
     }
-    let message = `
-<strong>«${artworkByHash.title.trim()}»</strong> by ${artworkByHash.user.full_name.trim()}
-
-<a href="${artworkByHash.permalink}">resource</a>
-
-#${artworkByHash.user.username.replaceAll("-", "")} ${msgcategories}
-  `
-    postData[0].caption = message
-    postData[0].parse_mode = "HTML"
-    return postData
-  }
+  },
 }
 exports.artwork = artwork;

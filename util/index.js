@@ -1,5 +1,5 @@
-const minMinuteDelay = 5; // Минимально время в минутах рандома
-const maxMinuteDelay = 10; // Максимальное время в минутах рандома
+const minMinuteDelay = 30; // Минимально время в минутах рандома
+const maxMinuteDelay = 40; // Максимальное время в минутах рандома
 const startHour = 8; // Время начал отправки поста
 const endHour = 24; // Время окончания отправки поста
 

@@ -8,6 +8,9 @@ const tgSender = {
   /**
    * Личное сообщение
    * */
+  sendPrivatePost(data) {
+    return bot.telegram.sendMediaGroup(process.env.TELEGRAM_USER_ID, data)
+  },
   sendPrivateMassage(msg) {
     bot.telegram.sendMessage(process.env.TELEGRAM_USER_ID, msg);
   },
