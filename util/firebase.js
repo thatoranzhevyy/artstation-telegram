@@ -55,8 +55,8 @@ const artwork = {
   async updateArtworkFromDB(hash, data) {
     let statusUpdate = false;
     const artwork = data.data;
-    artwork.planned = !data.data.planned
-    artwork.posted = !data.data.posted
+    artwork.planned = false
+    artwork.posted = true
     const artworkRef = doc(db, "artwork", hash);
     try {
       await updateDoc(artworkRef, artwork);
